@@ -51,6 +51,8 @@ Best Practice on Implementation
 """
 
 from typing import Any, Union
+import osmnx as ox
+import matplotlib.pyplot as plt
 import pandas as pd
 import logging
 # Set up basic logging
