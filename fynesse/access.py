@@ -126,3 +126,68 @@ def data() -> Union[pd.DataFrame, None]:
         logger.error(f"Unexpected error loading data: {e}")
         print(f"Error loading data: {e}")
         return None
+def plot_city_map(place_name, latitude, longitude, box_size_km=2, tags=None):
+    """
+    Visualizes the street network, buildings, and points of interest for a given location.
+
+    Parameters
+    ----------
+    place_name : str
+        The name of the place to visualize.
+    latitude : float
+        Latitude of the center point.
+    longitude : float
+        Longitude of the center point.
+    box_size_km : float
+        Size of the bounding box in kilometers.
+    tags : dict
+        A dictionary of OpenStreetMap tags to include as points of interest.
+    """
+    # Construct bbox from lat/lon and box_size
+    lat_degree_size = box_size_km / 111.0
+    lon_degree_size = box_size_km / (111.0 * math.cos(math.radians(latitude)))
+
+    north = latitude + lat_degree_size / 2
+    south = latitude - lat_degree_size / 2
+    west = longitude - lon_degree_size / 2
+    east = longitude + lon_degree_size / 2
+    bbox = (west, south, east, north)
+
+    try:
+        # Get graph from location
+        graph = ox.graph_from_bbox(bbox, network_type='drive') # Specify network_type
+        # City area
+        area = ox.geocode_to_gdf(place_name)
+        # Street network
+        nodes, edges = ox.graph_to_gdfs(graph)
+        # Buildings
+        buildings = ox.features_from_bbox(bbox, tags={"building": True})
+        # POIs
+        if tags is None:
+            # Use default tags if none are provided
+            tags = {
+                "amenity": True,
+                "buildings": True,
+                "historic": True,
+                "leisure": True,
+                "shop": True,
+                "tourism": True,
+                "religion": True,
+                "memorial": True
+            }
+        pois = ox.features_from_bbox(bbox, tags=tags)
+
+        fig, ax = plt.subplots(figsize=(8,8))
+        area.plot(ax=ax, color="tan", alpha=0.5)
+        buildings.plot(ax=ax, facecolor="gray", edgecolor="gray")
+        edges.plot(ax=ax, linewidth=1, edgecolor="black", alpha=0.3)
+        nodes.plot(ax=ax, color="black", markersize=1, alpha=0.3)
+        if not pois.empty:
+            pois.plot(ax=ax, color="green", markersize=5, alpha=1)
+        ax.set_xlim(west, east)
+        ax.set_ylim(south, north)
+        ax.set_title(place_name, fontsize=14)
+        plt.show()
+    except Exception as e:
+        print(f"An error occurred while plotting the map: {e}")
+        print(f"Could not plot map for {place_name} at ({latitude}, {longitude}) with box size {box_size_km} km.")
