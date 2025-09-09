@@ -145,7 +145,7 @@ def plot_city_map(place_name, latitude, longitude, box_size_km=2, tags=None):
     """
     # Construct bbox from lat/lon and box_size
     lat_degree_size = box_size_km / 111.0
-    lon_degree_size = box_size_km / (111.0 * math.cos(math.radians(latitude)))
+    lon_degree_size = box_size_km / 111.0 
 
     north = latitude + lat_degree_size / 2
     south = latitude - lat_degree_size / 2
